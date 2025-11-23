@@ -3,7 +3,12 @@
 	"package": "net.gthreed.geedwinterpack.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"ServerLevelMixin",
+		"WeatherEffectRendererMixin",
+		"SoundManagerMixin",
+		"ParticleEngineMixin"
+	],
+	"client": [
 	],
 	"injectors": {
 		"defaultRequire": 1

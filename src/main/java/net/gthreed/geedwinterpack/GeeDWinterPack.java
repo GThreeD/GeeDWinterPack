@@ -20,5 +20,13 @@ public class GeeDWinterPack implements ModInitializer {
 		// Proceed with mild caution.
 
 		LOGGER.info("Hello Fabric world!");
+
+		//TODO: Remove Waterdrops
+		//TODO: Day Light under Snow
+		//TODO: Slow Snow and not randomized
+		//TODO: Snow grow
+		//TODO: Remove Snow on Path
+		//TODO: Part2 Pixelise Snow Path
+		//TODO: Add Thunder
 	}
 }
