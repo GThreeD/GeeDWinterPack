@@ -2,6 +2,8 @@ package net.gthreed.geedwinterpack;
 
 import net.fabricmc.api.ModInitializer;
 
+import net.gthreed.geedwinterpack.block.ModBlockEntities;
+import net.gthreed.geedwinterpack.block.ModBlocks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,9 +22,8 @@ public class GeeDWinterPack implements ModInitializer {
 		// Proceed with mild caution.
 
 		LOGGER.info("Hello Fabric world!");
-
-		//TODO: Remove Waterdrops
-		//TODO: Day Light under Snow
+		ModBlocks.init();
+		ModBlockEntities.init();
 		//TODO: Slow Snow and not randomized
 		//TODO: Snow grow
 		//TODO: Remove Snow on Path

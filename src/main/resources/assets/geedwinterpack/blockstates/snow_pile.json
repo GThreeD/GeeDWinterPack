@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "": { "model": "geedwinterpack:block/snow_pile" },
+    "layers=1": { "model": "geedwinterpack:block/snow_pile_base" },
+    "layers=2": { "model": "geedwinterpack:block/snow_pile_base" },
+    "layers=3": { "model": "geedwinterpack:block/snow_pile_base" },
+    "layers=4": { "model": "geedwinterpack:block/snow_pile_base" },
+    "layers=5": { "model": "geedwinterpack:block/snow_pile_base" },
+    "layers=6": { "model": "geedwinterpack:block/snow_pile_base" },
+    "layers=7": { "model": "geedwinterpack:block/snow_pile_base" },
+    "layers=8": { "model": "geedwinterpack:block/snow_pile_base" }
+  }
+}
