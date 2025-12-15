@@ -2,6 +2,7 @@ package net.gthreed.geedwinterpack.block;
 
 import net.gthreed.geedwinterpack.GeeDWinterPack;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlock;
+import net.gthreed.geedwinterpack.block.snowpile.SnowPileCellBlock;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -29,6 +30,15 @@ public class ModBlocks {
                     new Item.Properties()
                             .setId(ResourceKey.create(Registries.ITEM, SNOW_PILE_ID))
             )
+    );
+
+    public static final Identifier SNOW_PILE_CELL_ID =
+            Identifier.fromNamespaceAndPath(GeeDWinterPack.MOD_ID, "snow_pile_cell");
+
+    public static final Block SNOW_PILE_CELL = Registry.register(
+            BuiltInRegistries.BLOCK,
+            SNOW_PILE_CELL_ID,
+            new SnowPileCellBlock(ResourceKey.create(Registries.BLOCK, SNOW_PILE_CELL_ID))
     );
 
     public static void init() {

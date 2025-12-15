@@ -1,3 +1,6 @@
 {
-  "parent": "geedwinterpack:block/snow_pile"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "minecraft:block/snow"
+  }
 }

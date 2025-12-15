@@ -1,7 +1,7 @@
 package net.gthreed.geedwinterpack.block.snowpile;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.Font;
+import net.gthreed.geedwinterpack.block.ModBlocks;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -10,7 +10,6 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverl
 import net.minecraft.client.renderer.state.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,6 +44,8 @@ public class SnowPileBlockEntityRenderer
         } else {
             state.lightCoords = 0;
         }
+
+        state.layers = be.getBlockState().getValue(SnowPileBlock.LAYERS);
     }
 
     @Override
@@ -69,8 +70,6 @@ public class SnowPileBlockEntityRenderer
         int grid = SnowPileBlockEntity.GRID;
         float cellSize = 1.0f / (float) grid;
 
-        float baseHeight = 0.6f;
-
         matrices.pushPose();
 
         for (int z = 0; z < grid; z++) {
@@ -82,17 +81,23 @@ public class SnowPileBlockEntityRenderer
                 float minX = x * cellSize;
                 float minZ = z * cellSize;
 
-                float height = baseHeight * val;
-
                 matrices.pushPose();
 
                 matrices.translate(minX, 0.001f, minZ);
 
-                matrices.scale(cellSize, height, cellSize);
+                float targetHeight = val / 16.0f;
+
+                float baseHeight = 1.0f / 16.0f;
+                float scaleY = targetHeight / baseHeight;
+
+                var cellState = ModBlocks.SNOW_PILE_CELL.defaultBlockState()
+                        .setValue(SnowPileCellBlock.CELL, idx);
+
+                matrices.scale(cellSize, scaleY, cellSize);
 
                 queue.submitBlock(
                         matrices,
-                        Blocks.SNOW.defaultBlockState(),
+                        cellState,
                         state.lightCoords,
                         OverlayTexture.NO_OVERLAY,
                         0

@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "geedwinterpack:block/snow_pile_cell"
+      }
+    }
+  ]
+}

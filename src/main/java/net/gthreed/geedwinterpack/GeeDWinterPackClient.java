@@ -1,12 +1,9 @@
 package net.gthreed.geedwinterpack;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
-import net.gthreed.geedwinterpack.CustomRendering.SnowTracksClient;
 import net.gthreed.geedwinterpack.block.ModBlockEntities;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlockEntityRenderer;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -39,12 +36,12 @@ public class GeeDWinterPackClient implements ClientModInitializer {
                 SnowPileBlockEntityRenderer::new
         );
 
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            LocalPlayer player = client.player;
-            if (player != null) {
-                SnowTracksClient.onPlayerTick(player);
-            }
-        });
+//        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+//            LocalPlayer player = client.player;
+//            if (player != null) {
+//                SnowTracksClient.onPlayerTick(player);
+//            }
+//        });
 
     }
 }

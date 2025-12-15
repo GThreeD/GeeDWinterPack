@@ -48,16 +48,27 @@ public class SnowAccumulation {
         BlockState below = level.getBlockState(belowPos);
 
         if (state.is(ModBlocks.SNOW_PILE)) {
+            if (isHeatNearby(level, pos, 3)) { // radius 3
+                melt(level, pos, state);
+                return;
+            }
+
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof SnowPileBlockEntity pile) {
                 int layers = state.getValue(SnowPileBlock.LAYERS);
-                if (layers < 8 && random.nextFloat() < 0.3f) {
-                    state = state.setValue(SnowPileBlock.LAYERS, layers + 1);
-                    level.setBlock(pos, state, 3);
-                }
 
                 if (random.nextFloat() < 0.15f) {
-                    pile.fillAll();
+                    int x = random.nextInt(SnowPileBlockEntity.GRID);
+                    int z = random.nextInt(SnowPileBlockEntity.GRID);
+                    pile.incrementCell(x, z, 1);
+                }
+
+                if (layers < 8 && pile.allFull() && random.nextFloat() < 0.05f) {
+                    level.setBlock(pos, state.setValue(SnowPileBlock.LAYERS, layers + 1), 3);
+                    BlockEntity be2 = level.getBlockEntity(pos);
+                    if (be2 instanceof SnowPileBlockEntity pile2) {
+                        pile2.fillToLayers();
+                    }
                 }
             }
             return;
@@ -72,15 +83,12 @@ public class SnowAccumulation {
                         BlockState newBelowState = below.setValue(SnowPileBlock.LAYERS, layers + 1);
                         level.setBlock(belowPos, newBelowState, 3);
                     }
-                    if (random.nextFloat() < 0.1f) {
-                        pileBelow.fillAll();
-                    }
                 }
             }
             return;
         }
 
-        if (state.isAir()) {
+        if (state.isAir() || state.canBeReplaced()) {
             if (random.nextFloat() < 0.25f) {
                 level.setBlock(pos, ModBlocks.SNOW_PILE.defaultBlockState(), 3);
                 BlockEntity be = level.getBlockEntity(pos);
@@ -90,4 +98,34 @@ public class SnowAccumulation {
             }
         }
     }
+
+    private static boolean isHeatBlock(BlockState s) {
+        return s.is(Blocks.TORCH) || s.is(Blocks.WALL_TORCH)
+                || s.is(Blocks.CAMPFIRE) || s.is(Blocks.SOUL_CAMPFIRE)
+                || s.is(Blocks.FIRE) || s.is(Blocks.LAVA)
+                || s.is(Blocks.MAGMA_BLOCK);
+    }
+
+    private static boolean isHeatNearby(ServerLevel level, BlockPos pos, int r) {
+        for (int dx = -r; dx <= r; dx++)
+            for (int dy = -r; dy <= r; dy++)
+                for (int dz = -r; dz <= r; dz++) {
+                    if (isHeatBlock(level.getBlockState(pos.offset(dx, dy, dz)))) return true;
+                }
+        return false;
+    }
+
+    private static void melt(ServerLevel level, BlockPos pos, BlockState state) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof SnowPileBlockEntity pile) {
+            // langsam schmelzen: random tile runter
+            RandomSource rand = level.random;
+            int x = rand.nextInt(SnowPileBlockEntity.GRID);
+            int z = rand.nextInt(SnowPileBlockEntity.GRID);
+            pile.decrementCell(x, z, 1);
+
+            if (pile.allEmpty()) level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        }
+    }
+
 }
