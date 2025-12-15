@@ -48,7 +48,7 @@ public class SnowAccumulation {
         BlockState below = level.getBlockState(belowPos);
 
         if (state.is(ModBlocks.SNOW_PILE)) {
-            if (isHeatNearby(level, pos, 3)) { // radius 3
+            if (isHeatNearby(level, pos, 3, 2)) { // radius 3
                 melt(level, pos, state);
                 return;
             }
@@ -63,7 +63,7 @@ public class SnowAccumulation {
                     pile.incrementCell(x, z, 1);
                 }
 
-                if (layers < 8 && pile.allFull() && random.nextFloat() < 0.05f) {
+                if (layers < 13 && pile.allFull() && random.nextFloat() < 0.05f) {
                     level.setBlock(pos, state.setValue(SnowPileBlock.LAYERS, layers + 1), 3);
                     BlockEntity be2 = level.getBlockEntity(pos);
                     if (be2 instanceof SnowPileBlockEntity pile2) {
@@ -114,12 +114,16 @@ public class SnowAccumulation {
                 || s.is(Blocks.MAGMA_BLOCK);
     }
 
-    private static boolean isHeatNearby(ServerLevel level, BlockPos pos, int r) {
-        for (int dx = -r; dx <= r; dx++)
-            for (int dy = -r; dy <= r; dy++)
+    private static boolean isHeatNearby(ServerLevel level, BlockPos pos, int r, int yRange) {
+        int r2 = r * r;
+        for (int dy = -yRange; dy <= yRange; dy++) {
+            for (int dx = -r; dx <= r; dx++) {
                 for (int dz = -r; dz <= r; dz++) {
+                    if (dx * dx + dy * dy + dz * dz > r2) continue;
                     if (isHeatBlock(level.getBlockState(pos.offset(dx, dy, dz)))) return true;
                 }
+            }
+        }
         return false;
     }
 
