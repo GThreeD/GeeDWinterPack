@@ -90,10 +90,18 @@ public class SnowAccumulation {
 
         if (state.isAir() || state.canBeReplaced()) {
             if (random.nextFloat() < 0.25f) {
-                level.setBlock(pos, ModBlocks.SNOW_PILE.defaultBlockState(), 3);
+                level.setBlock(
+                        pos,
+                        ModBlocks.SNOW_PILE.defaultBlockState().setValue(SnowPileBlock.LAYERS, 1),
+                        3
+                );
+
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof SnowPileBlockEntity pile) {
-                    pile.fillAll();
+                    pile.clearAll();
+                    int x = random.nextInt(SnowPileBlockEntity.GRID);
+                    int z = random.nextInt(SnowPileBlockEntity.GRID);
+                    pile.setCellHeight(x, z, 1);
                 }
             }
         }
