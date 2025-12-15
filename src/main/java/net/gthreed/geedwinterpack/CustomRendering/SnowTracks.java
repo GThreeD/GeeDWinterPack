@@ -1,15 +1,15 @@
 package net.gthreed.geedwinterpack.CustomRendering;
 
 import net.gthreed.geedwinterpack.block.ModBlocks;
-import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlock;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
@@ -17,83 +17,95 @@ import java.util.Map;
 import java.util.UUID;
 
 public class SnowTracks {
-    private static final Map<UUID, Long> LAST_FOOTPRINT = new HashMap<>();
+    private static final Map<UUID, Vec2> LAST_STEP_POS = new HashMap<>();
+    private static final Map<UUID, Long> LAST_PRINT_KEY = new HashMap<>();
+    private static final double MIN_STEP_DIST = 0.12;
+    private static final double MIN_HSPEED2 = 1e-5;
 
-    public static void onPlayerTick(ServerPlayer player) {
-        if (player.isSpectator() || player.getAbilities().flying) return;
-        if (!player.onGround()) return;
 
-        ServerLevel level = player.level();
-
-        Vec3 feet = player.position().subtract(0, 0.1, 0);
-        BlockPos pos = BlockPos.containing(feet);
-
-        BlockState state = level.getBlockState(pos);
-        if (!state.is(ModBlocks.SNOW_PILE)) {
-            pos = pos.below();
-            state = level.getBlockState(pos);
-            if (!state.is(ModBlocks.SNOW_PILE)) return;
+    public static void onEntityTick(LivingEntity ent) {
+        if (!(ent instanceof net.minecraft.world.entity.player.Player)) {
+            Vec3 dm = ent.getDeltaMovement();
+            double hs2 = dm.x * dm.x + dm.z * dm.z;
+            if (hs2 < MIN_HSPEED2) return;
         }
 
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof SnowPileBlockEntity pile)) return;
-
-        double localX = feet.x - pos.getX();
-        double localZ = feet.z - pos.getZ();
-
-        int grid = SnowPileBlockEntity.GRID;
-        int cellX = Mth.clamp((int) (localX * grid), 0, grid - 1);
-        int cellZ = Mth.clamp((int) (localZ * grid), 0, grid - 1);
-
-        long key = pos.asLong() ^ ((long) cellX << 4) ^ (long) cellZ;
-        Long last = LAST_FOOTPRINT.put(player.getUUID(), key);
-        if (last != null && last == key) return; // <<< nur wenn neue Tile
-
-        // jetzt "schrittweise" abtragen:
-        pile.decrementCell(cellX, cellZ, 1);
-
-        // optional Nachbar-Tile leicht mitnehmen:
-        Vec3 motion = player.getDeltaMovement();
-        int nx = cellX, nz = cellZ;
-        if (Math.abs(motion.x) > Math.abs(motion.z)) nx += (motion.x > 0 ? 1 : -1);
-        else if (Math.abs(motion.z) > 0.001) nz += (motion.z > 0 ? 1 : -1);
-        nx = Mth.clamp(nx, 0, grid - 1);
-        nz = Mth.clamp(nz, 0, grid - 1);
-        pile.decrementCell(nx, nz, 1);
-
-        if (pile.allEmpty()) {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        UUID id = ent.getUUID();
+        double ex = ent.getX(), ez = ent.getZ();
+        Vec2 last = LAST_STEP_POS.get(id);
+        if (last != null) {
+            double dx = ex - last.x, dz = ez - last.y;
+            if (dx * dx + dz * dz < MIN_STEP_DIST * MIN_STEP_DIST) return;
         }
-    }
+        LAST_STEP_POS.put(id, new Vec2((float) ex, (float) ez));
 
-    private static boolean allEmpty(SnowPileBlockEntity pile) {
-        for (int v : pile.getCells()) {
-            if (v > 0) return false;
-        }
-        return true;
-    }
+        if (ent.isSpectator()) return;
+        if (!ent.onGround()) return;
 
-    private static void clearCell(ServerLevel level, BlockPos pos, int cellX, int cellZ) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof SnowPileBlockEntity pile)) return;
+        Level level = ent.level();
+        AABB bb = ent.getBoundingBox();
+        double y = bb.minY - 0.05;
 
-        if (pile.hasNoSnow(cellX, cellZ)) return;
-        pile.setSnow(cellX, cellZ, false);
+        int minBx = Mth.floor(bb.minX);
+        int maxBx = Mth.floor(bb.maxX - 1e-6);
+        int minBz = Mth.floor(bb.minZ);
+        int maxBz = Mth.floor(bb.maxZ - 1e-6);
 
-        if (!allEmpty(pile)) return;
+        for (int bx = minBx; bx <= maxBx; bx++) {
+            for (int bz = minBz; bz <= maxBz; bz++) {
 
-        BlockState state = level.getBlockState(pos);
-        int layers = state.getValue(SnowPileBlock.LAYERS);
+                BlockPos pos = new BlockPos(bx, Mth.floor(y), bz);
+                BlockState state = level.getBlockState(pos);
+                if (!state.is(ModBlocks.SNOW_PILE)) {
+                    pos = pos.below();
+                    state = level.getBlockState(pos);
+                    if (!state.is(ModBlocks.SNOW_PILE)) continue;
+                }
 
-        if (layers > 1) {
-            level.setBlock(pos, state.setValue(SnowPileBlock.LAYERS, layers - 1), 3);
+                BlockEntity be = level.getBlockEntity(pos);
+                if (!(be instanceof SnowPileBlockEntity pile)) continue;
 
-            BlockEntity be2 = level.getBlockEntity(pos);
-            if (be2 instanceof SnowPileBlockEntity pile2) {
-                pile2.fillAll();
+                // overlap in lokalen Block-Koordinaten (0..1)
+                double ox0 = Math.max(bb.minX, bx) - bx;
+                double oz0 = Math.max(bb.minZ, bz) - bz;
+                double ox1 = Math.min(bb.maxX, bx + 1) - bx;
+                double oz1 = Math.min(bb.maxZ, bz + 1) - bz;
+
+                int grid = SnowPileBlockEntity.GRID;
+
+                int cx0 = Mth.clamp((int) Math.floor(ox0 * grid), 0, grid - 1);
+                int cz0 = Mth.clamp((int) Math.floor(oz0 * grid), 0, grid - 1);
+                int cx1 = Mth.clamp((int) Math.floor((ox1 * grid) - 1e-6), 0, grid - 1);
+                int cz1 = Mth.clamp((int) Math.floor((oz1 * grid) - 1e-6), 0, grid - 1);
+
+                // optional: “nur beim neuen Schritt” → Key auf Rechteck
+                long key = pos.asLong()
+                        ^ ((long) cx0 << 8) ^ ((long) cz0 << 12)
+                        ^ ((long) cx1 << 16) ^ ((long) cz1 << 20);
+
+                Long lastKey = LAST_PRINT_KEY.put(ent.getUUID(), key);
+                if (lastKey != null && lastKey == key) continue;
+
+                boolean changed = false;
+                int p = pressureFor(ent);
+
+                for (int cz = cz0; cz <= cz1; cz++) {
+                    for (int cx = cx0; cx <= cx1; cx++) {
+                        changed |= pile.applyFootprint(cx, cz, p);
+                    }
+                }
+
+                if (changed) {
+                    pile.smoothOnce();
+                }
+
             }
-        } else {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
         }
     }
+
+    private static int pressureFor(LivingEntity ent) {
+        // klein = 1, größere Mobs = 2
+        return ent.getBbWidth() >= 0.9f ? 2 : 1;
+    }
+
 }

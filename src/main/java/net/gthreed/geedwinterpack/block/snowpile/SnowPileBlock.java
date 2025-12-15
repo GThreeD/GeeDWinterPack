@@ -47,7 +47,7 @@ public class SnowPileBlock extends Block implements EntityBlock {
                 .isViewBlocking((s, w, p) -> false)
                 .isSuffocating((s, w, p) -> false)
                 .setId(blockResourceKey));
-        this.registerDefaultState(this.stateDefinition.any().setValue(LAYERS, 4));
+        this.registerDefaultState(this.stateDefinition.any().setValue(LAYERS, 1));
     }
 
     @Override
