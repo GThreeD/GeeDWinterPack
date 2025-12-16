@@ -1,9 +1,52 @@
 {
-  "multipart": [
-    {
-      "apply": {
-        "model": "geedwinterpack:block/snow_pile_cell"
-      }
+  "variants": {
+    "cell=0": {
+      "model": "geedwinterpack:block/snow_pile_cell_0"
+    },
+    "cell=1": {
+      "model": "geedwinterpack:block/snow_pile_cell_1"
+    },
+    "cell=2": {
+      "model": "geedwinterpack:block/snow_pile_cell_2"
+    },
+    "cell=3": {
+      "model": "geedwinterpack:block/snow_pile_cell_3"
+    },
+    "cell=4": {
+      "model": "geedwinterpack:block/snow_pile_cell_4"
+    },
+    "cell=5": {
+      "model": "geedwinterpack:block/snow_pile_cell_5"
+    },
+    "cell=6": {
+      "model": "geedwinterpack:block/snow_pile_cell_6"
+    },
+    "cell=7": {
+      "model": "geedwinterpack:block/snow_pile_cell_7"
+    },
+    "cell=8": {
+      "model": "geedwinterpack:block/snow_pile_cell_8"
+    },
+    "cell=9": {
+      "model": "geedwinterpack:block/snow_pile_cell_9"
+    },
+    "cell=10": {
+      "model": "geedwinterpack:block/snow_pile_cell_10"
+    },
+    "cell=11": {
+      "model": "geedwinterpack:block/snow_pile_cell_11"
+    },
+    "cell=12": {
+      "model": "geedwinterpack:block/snow_pile_cell_12"
+    },
+    "cell=13": {
+      "model": "geedwinterpack:block/snow_pile_cell_13"
+    },
+    "cell=14": {
+      "model": "geedwinterpack:block/snow_pile_cell_14"
+    },
+    "cell=15": {
+      "model": "geedwinterpack:block/snow_pile_cell_15"
     }
-  ]
+  }
 }

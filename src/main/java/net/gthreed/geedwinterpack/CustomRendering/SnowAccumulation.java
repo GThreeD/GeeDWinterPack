@@ -98,6 +98,28 @@ public class SnowAccumulation {
         return false;
     }
 
+    private static int nearestHeatDistSq(ServerLevel level, BlockPos pos, int r, int yRange) {
+        int best = Integer.MAX_VALUE;
+        int r2 = r * r;
+
+        for (int dy = -yRange; dy <= yRange; dy++) {
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    int d2 = dx * dx + dz * dz; // Kreis in XZ
+                    if (d2 > r2) continue;
+
+                    BlockPos p = pos.offset(dx, dy, dz);
+                    if (isHeatBlock(level.getBlockState(p))) {
+                        int full = d2 + dy * dy; // optional 3D Einfluss
+                        if (full < best) best = full;
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+
     private static void melt(ServerLevel level, BlockPos pos, BlockState state) {
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof SnowPileBlockEntity pile) {
@@ -111,6 +133,21 @@ public class SnowAccumulation {
     }
 
     private static void growExistingPile(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) {
+        int best = nearestHeatDistSq(level, pos, 6, 2);
+        int maxAllowed = MAX_LAYERS;
+        if (best != Integer.MAX_VALUE) {
+            float dist = (float) Math.sqrt(best);
+            float r = 6f;
+            float t = 1f - (dist / r);
+            if (random.nextFloat() < 0.35f * t) {
+                int melts = 1 + (t > 0.66f ? 1 : 0);
+                for (int k = 0; k < melts; k++) melt(level, pos, state);
+            }
+
+            maxAllowed = Math.max(1, Math.round(13 * (dist / r)));
+        }
+
+
         if (isHeatNearby(level, pos, 3, 2)) {
             melt(level, pos, state);
             return;
@@ -134,7 +171,7 @@ public class SnowAccumulation {
             pile.smoothOnce();
         }
 
-        if (layers < MAX_LAYERS && shouldLayerUp(pile, layers) && random.nextFloat() < 0.05f) {
+        if (layers < maxAllowed && shouldLayerUp(pile, layers) && random.nextFloat() < 0.05f) {
             level.setBlock(pos, state.setValue(SnowPileBlock.LAYERS, layers + 1), 3);
 
             BlockEntity be2 = level.getBlockEntity(pos);

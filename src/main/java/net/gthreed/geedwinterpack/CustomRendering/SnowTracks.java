@@ -98,7 +98,6 @@ public class SnowTracks {
                 if (changed) {
                     pile.smoothOnce();
                 }
-
             }
         }
     }

@@ -139,7 +139,4 @@ public class SnowPileBlock extends Block implements EntityBlock {
         }
         return InteractionResult.PASS;
     }
-
-
 }
-
