@@ -25,7 +25,6 @@ public class SnowPileBlockEntity extends BlockEntity {
     private final int[] compaction = new int[GRID * GRID];
 
 
-
     public SnowPileBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SNOW_PILE, pos, state);
         int layers = state.getValue(SnowPileBlock.LAYERS);
@@ -33,6 +32,9 @@ public class SnowPileBlockEntity extends BlockEntity {
         Arrays.fill(this.compaction, 0);
     }
 
+    public static int index(int x, int z) {
+        return z * GRID + x;
+    }
 
     public int getCellHeight(int x, int z) {
         return getCell(x, z);
@@ -61,7 +63,6 @@ public class SnowPileBlockEntity extends BlockEntity {
         if (idx >= 0 && idx < compaction.length) compaction[idx] = 0;
         setCellHeight(x, z, getCellHeight(x, z) + amount);
     }
-
 
     public boolean allEmpty() {
         for (int v : cells) if (v > 0) return false;
@@ -118,9 +119,6 @@ public class SnowPileBlockEntity extends BlockEntity {
 
     public int[] getCells() {
         return cells;
-    }
-    public static int index(int x, int z) {
-        return z * GRID + x;
     }
 
     public int getCell(int x, int z) {

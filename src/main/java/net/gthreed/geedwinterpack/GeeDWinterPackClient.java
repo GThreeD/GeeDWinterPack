@@ -12,9 +12,10 @@ import org.slf4j.LoggerFactory;
 
 public class GeeDWinterPackClient implements ClientModInitializer {
 
-    public static SimpleParticleType CUSTOM_SNOW;
     public static final String MOD_ID = "geedwinterpack";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static SimpleParticleType CUSTOM_SNOW;
+
     @Override
     public void onInitializeClient() {
 
