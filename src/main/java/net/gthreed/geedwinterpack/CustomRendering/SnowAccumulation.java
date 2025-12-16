@@ -1,5 +1,4 @@
 package net.gthreed.geedwinterpack.CustomRendering;
-
 import net.gthreed.geedwinterpack.block.ModBlocks;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlock;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlockEntity;
@@ -13,6 +12,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class SnowAccumulation {
+    private static final int MAX_LAYERS = 13;
+    private static final int NEAR_TOP_TILES_FOR_LAYER_UP = 12;
+
     public static void tick(ServerLevel level) {
         if (level.isClientSide()) return;
 
@@ -48,43 +50,12 @@ public class SnowAccumulation {
         BlockState below = level.getBlockState(belowPos);
 
         if (state.is(ModBlocks.SNOW_PILE)) {
-            if (isHeatNearby(level, pos, 3, 2)) { // radius 3
-                melt(level, pos, state);
-                return;
-            }
-
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof SnowPileBlockEntity pile) {
-                int layers = state.getValue(SnowPileBlock.LAYERS);
-
-                if (random.nextFloat() < 0.15f) {
-                    int x = random.nextInt(SnowPileBlockEntity.GRID);
-                    int z = random.nextInt(SnowPileBlockEntity.GRID);
-                    pile.incrementCell(x, z, 1);
-                }
-
-                if (layers < 13 && pile.allFull() && random.nextFloat() < 0.05f) {
-                    level.setBlock(pos, state.setValue(SnowPileBlock.LAYERS, layers + 1), 3);
-                    BlockEntity be2 = level.getBlockEntity(pos);
-                    if (be2 instanceof SnowPileBlockEntity pile2) {
-                        pile2.fillToLayers();
-                    }
-                }
-            }
+            growExistingPile(level, pos, state, random);
             return;
         }
 
-        if (state.isAir() && (below.is(ModBlocks.SNOW_PILE) || below.is(Blocks.SNOW))) {
-            if (below.is(ModBlocks.SNOW_PILE)) {
-                BlockEntity beBelow = level.getBlockEntity(belowPos);
-                if (beBelow instanceof SnowPileBlockEntity pileBelow) {
-                    int layers = below.getValue(SnowPileBlock.LAYERS);
-                    if (layers < 8 && random.nextFloat() < 0.4f) {
-                        BlockState newBelowState = below.setValue(SnowPileBlock.LAYERS, layers + 1);
-                        level.setBlock(belowPos, newBelowState, 3);
-                    }
-                }
-            }
+        if (below.is(ModBlocks.SNOW_PILE)) {
+            growExistingPile(level, belowPos, below, random);
             return;
         }
 
@@ -130,7 +101,6 @@ public class SnowAccumulation {
     private static void melt(ServerLevel level, BlockPos pos, BlockState state) {
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof SnowPileBlockEntity pile) {
-            // langsam schmelzen: random tile runter
             RandomSource rand = level.random;
             int x = rand.nextInt(SnowPileBlockEntity.GRID);
             int z = rand.nextInt(SnowPileBlockEntity.GRID);
@@ -140,4 +110,75 @@ public class SnowAccumulation {
         }
     }
 
+    private static void growExistingPile(ServerLevel level, BlockPos pos, BlockState state, RandomSource random) {
+        if (isHeatNearby(level, pos, 3, 2)) {
+            melt(level, pos, state);
+            return;
+        }
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof SnowPileBlockEntity pile)) return;
+
+        int layers = state.getValue(SnowPileBlock.LAYERS);
+
+        if (random.nextFloat() < 0.18f) {
+            for (int tries = 0; tries < 6; tries++) {
+                int[] c = pickLowCell(pile, random);
+                int cx = c[0], cz = c[1];
+                if (pile.getCellHeight(cx, cz) < layers) {
+                    pile.incrementCell(cx, cz, 1);
+                    break;
+                }
+            }
+
+            pile.smoothOnce();
+        }
+
+        if (layers < MAX_LAYERS && shouldLayerUp(pile, layers) && random.nextFloat() < 0.05f) {
+            level.setBlock(pos, state.setValue(SnowPileBlock.LAYERS, layers + 1), 3);
+
+            BlockEntity be2 = level.getBlockEntity(pos);
+            if (be2 instanceof SnowPileBlockEntity pile2) {
+                int[] c = pickLowCell(pile2, random);
+                pile2.incrementCell(c[0], c[1], 1);
+            }
+        }
+    }
+
+    private static boolean shouldLayerUp(SnowPileBlockEntity pile, int layers) {
+        int nearTop = 0;
+        int min = Integer.MAX_VALUE;
+
+        int g = SnowPileBlockEntity.GRID;
+        for (int z = 0; z < g; z++) {
+            for (int x = 0; x < g; x++) {
+                int h = pile.getCellHeight(x, z);
+                min = Math.min(min, h);
+                if (h >= layers - 1) nearTop++;
+            }
+        }
+
+        if (min <= layers - 3) return false;
+
+        return nearTop >= NEAR_TOP_TILES_FOR_LAYER_UP;
+    }
+
+    private static int[] pickLowCell(SnowPileBlockEntity pile, RandomSource random) {
+        int g = SnowPileBlockEntity.GRID;
+
+        int min = Integer.MAX_VALUE;
+        for (int z = 0; z < g; z++)
+            for (int x = 0; x < g; x++)
+                min = Math.min(min, pile.getCellHeight(x, z));
+
+        int target = min + 1;
+        int tries = 12;
+        while (tries-- > 0) {
+            int x = random.nextInt(g);
+            int z = random.nextInt(g);
+            if (pile.getCellHeight(x, z) <= target) return new int[]{x, z};
+        }
+
+        return new int[]{random.nextInt(g), random.nextInt(g)};
+    }
 }

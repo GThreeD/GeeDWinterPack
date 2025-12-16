@@ -92,7 +92,6 @@ public class SnowPileBlockEntity extends BlockEntity {
     protected void loadAdditional(ValueInput in) {
         super.loadAdditional(in);
 
-        // 1) cells laden (WICHTIG für Renderer + Collision auf Client)
         in.getIntArray("cells").ifPresent(arr -> {
             if (arr.length == this.cells.length) {
                 int layers = getBlockState().getValue(SnowPileBlock.LAYERS);
@@ -104,7 +103,6 @@ public class SnowPileBlockEntity extends BlockEntity {
             }
         });
 
-        // 2) compaction laden
         in.getIntArray("comp").ifPresent(arr -> {
             if (arr.length == this.compaction.length) {
                 System.arraycopy(arr, 0, this.compaction, 0, this.compaction.length);
@@ -125,37 +123,10 @@ public class SnowPileBlockEntity extends BlockEntity {
         return z * GRID + x;
     }
 
-    public void setCell(int index, int value) {
-        if (index < 0 || index >= cells.length) return;
-        cells[index] = value;
-        onCellsChanged();
-    }
-
     public int getCell(int x, int z) {
         int idx = index(x, z);
         if (idx < 0 || idx >= cells.length) return 0;
         return cells[idx];
-    }
-
-    public boolean hasNoSnow(int x, int z) {
-        return getCell(x, z) <= 0;
-    }
-
-    public void setSnow(int x, int z, boolean value) {
-        int idx = index(x, z);
-        if (idx < 0 || idx >= cells.length) return;
-
-        int newVal = value ? 1 : 0;
-        if (cells[idx] == newVal) return;
-
-        cells[idx] = newVal;
-        onCellsChanged();
-    }
-
-    public void fillAll() {
-        Arrays.fill(this.cells, 1);
-        Arrays.fill(this.compaction, 0);
-        onCellsChanged();
     }
 
     public void clearAll() {

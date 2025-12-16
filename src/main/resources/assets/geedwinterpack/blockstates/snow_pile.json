@@ -8,6 +8,23 @@
     "layers=5": { "model": "geedwinterpack:block/snow_pile_base" },
     "layers=6": { "model": "geedwinterpack:block/snow_pile_base" },
     "layers=7": { "model": "geedwinterpack:block/snow_pile_base" },
-    "layers=8": { "model": "geedwinterpack:block/snow_pile_base" }
+    "layers=8": {
+      "model": "geedwinterpack:block/snow_pile_base"
+    },
+    "layers=9": {
+      "model": "geedwinterpack:block/snow_pile_base"
+    },
+    "layers=10": {
+      "model": "geedwinterpack:block/snow_pile_base"
+    },
+    "layers=11": {
+      "model": "geedwinterpack:block/snow_pile_base"
+    },
+    "layers=12": {
+      "model": "geedwinterpack:block/snow_pile_base"
+    },
+    "layers=13": {
+      "model": "geedwinterpack:block/snow_pile_base"
+    }
   }
 }
