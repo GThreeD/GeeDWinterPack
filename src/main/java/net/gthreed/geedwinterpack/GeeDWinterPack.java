@@ -1,7 +1,7 @@
 package net.gthreed.geedwinterpack;
 
 import net.fabricmc.api.ModInitializer;
-
+import net.gthreed.geedwinterpack.CustomRendering.SnowChunkSeeding;
 import net.gthreed.geedwinterpack.block.ModBlockEntities;
 import net.gthreed.geedwinterpack.block.ModBlocks;
 import org.slf4j.Logger;
@@ -24,10 +24,6 @@ public class GeeDWinterPack implements ModInitializer {
 		LOGGER.info("Hello Fabric world!");
 		ModBlocks.init();
 		ModBlockEntities.init();
-		//TODO: Slow Snow and not randomized
-		//TODO: Snow grow
-		//TODO: Remove Snow on Path
-		//TODO: Part2 Pixelise Snow Path
-		//TODO: Add Thunder
+        SnowChunkSeeding.init();
 	}
 }

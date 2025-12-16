@@ -1,4 +1,5 @@
 package net.gthreed.geedwinterpack.CustomRendering;
+
 import net.gthreed.geedwinterpack.block.ModBlocks;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlock;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlockEntity;
@@ -6,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14,6 +16,8 @@ import net.minecraft.world.phys.Vec3;
 public class SnowAccumulation {
     private static final int MAX_LAYERS = 13;
     private static final int NEAR_TOP_TILES_FOR_LAYER_UP = 12;
+    private static final double COVERAGE = 0.65; // wie viel Fläche überhaupt Schnee bekommt
+    private static final int RND_PASSES = 2;      // smoothing passes
 
     public static void tick(ServerLevel level) {
         if (level.isClientSide()) return;
@@ -30,19 +34,41 @@ public class SnowAccumulation {
                 int x = Mth.floor(px);
                 int z = Mth.floor(pz);
 
-                int airY = level.getHeight(
-                        net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,
-                        x, z
-                );
+                BlockPos placePos = pickSnowPlacePos(level, x, z);
+                if (placePos == null) continue;
 
-                BlockPos placePos = new BlockPos(x, airY, z);
-                BlockPos belowPos = placePos.below();
-
-                if (!level.canSeeSky(placePos)) continue;
-
-                maybePlaceSnowPile(level, placePos, belowPos, random);
+                maybePlaceSnowPile(level, placePos, placePos.below(), random);
             }
         }
+    }
+
+    private static BlockPos pickSnowPlacePos(ServerLevel level, int x, int z) {
+        int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z);
+        BlockPos pos = new BlockPos(x, y, z);
+
+        // Wenn Heightmap "über" einer replaceable Pflanze landet: 1 runter und die Pflanze ersetzen
+        if (level.getBlockState(pos).isAir()) {
+            BlockPos down = pos.below();
+            BlockState downState = level.getBlockState(down);
+            if (!downState.isAir() && downState.canBeReplaced()) {
+                pos = down;
+            }
+        }
+
+        if (!level.canSeeSky(pos)) return null;
+
+        // Nie in/auf Flüssigkeiten platzieren
+        if (!level.getFluidState(pos).isEmpty()) return null;
+        if (!level.getFluidState(pos.below()).isEmpty()) return null;
+
+        // Muss dort überleben können (verhindert u.a. Wasser/Blätter/etc.)
+        BlockState snow1 = ModBlocks.SNOW_PILE.defaultBlockState().setValue(SnowPileBlock.LAYERS, 1);
+        if (!snow1.canSurvive(level, pos)) return null;
+
+        BlockState at = level.getBlockState(pos);
+        if (!(at.isAir() || at.canBeReplaced())) return null;
+
+        return pos;
     }
 
     private static void maybePlaceSnowPile(ServerLevel level, BlockPos pos, BlockPos belowPos, RandomSource random) {
@@ -217,5 +243,58 @@ public class SnowAccumulation {
         }
 
         return new int[]{random.nextInt(g), random.nextInt(g)};
+    }
+
+    public static void seedChunkSnow(ServerLevel level, ChunkPos cp, boolean initial50) {
+        long seed = level.getSeed() ^ (cp.toLong() * 0x9E3779B97F4A7C15L);
+        RandomSource rnd = RandomSource.create(seed);
+
+        int startX = cp.getMinBlockX();
+        int startZ = cp.getMinBlockZ();
+
+        for (int dx = 0; dx < 16; dx++) {
+            for (int dz = 0; dz < 16; dz++) {
+                if (rnd.nextDouble() > COVERAGE) continue;
+
+                int x = startX + dx;
+                int z = startZ + dz;
+
+                BlockPos pos = pickSnowPlacePos(level, x, z);
+                if (pos == null) continue;
+
+                // Zielhöhe: initial ~50% ±, sonst kleiner
+                int targetLayers;
+                if (initial50) {
+                    double mean = MAX_LAYERS * 0.5;
+                    double val = mean + rnd.nextGaussian() * 1.5; // +/- Streuung
+                    targetLayers = Mth.clamp((int) Math.round(val), 1, MAX_LAYERS);
+                } else {
+                    targetLayers = 1; // oder 1..3 je nach Geschmack
+                }
+
+                // Block setzen
+                level.setBlock(pos, ModBlocks.SNOW_PILE.defaultBlockState()
+                        .setValue(SnowPileBlock.LAYERS, targetLayers), 3);
+
+                BlockEntity be = level.getBlockEntity(pos);
+                if (!(be instanceof SnowPileBlockEntity pile)) continue;
+
+                // “bedacht” füllen: eher flach starten, dann smoothen
+                pile.clearAll();
+
+                int g = SnowPileBlockEntity.GRID;
+                for (int i = 0; i < g * g; i++) {
+                    int cx = i % g, cz = i / g;
+
+                    // Basis: um ~50% der targetLayers, aber begrenzt (keine Säulen)
+                    double h = (targetLayers * 0.5) + rnd.nextGaussian() * 0.8;
+                    int cellH = Mth.clamp((int) Math.round(h), 0, targetLayers);
+
+                    pile.setCellHeight(cx, cz, cellH);
+                }
+
+                for (int k = 0; k < RND_PASSES; k++) pile.smoothOnce();
+            }
+        }
     }
 }

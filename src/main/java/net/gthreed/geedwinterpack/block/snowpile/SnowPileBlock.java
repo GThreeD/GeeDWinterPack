@@ -3,6 +3,7 @@ package net.gthreed.geedwinterpack.block.snowpile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
@@ -70,6 +71,8 @@ public class SnowPileBlock extends Block implements EntityBlock {
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         BlockPos belowPos = pos.below();
         BlockState below = level.getBlockState(belowPos);
+
+        if (below.is(BlockTags.LEAVES)) return true;
 
         return below.isFaceSturdy(level, belowPos, Direction.UP)
                 || below.is(Blocks.SNOW)
