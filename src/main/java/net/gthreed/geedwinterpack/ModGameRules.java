@@ -15,6 +15,12 @@ public final class ModGameRules {
             .forInteger(3)
             .category(GameRuleCategory.MISC)
             .buildAndRegister(Identifier.fromNamespaceAndPath(GeeDWinterPack.MOD_ID, "max_snow_height"));
+
+    public static final GameRule<Boolean> ENABLE_SNOW_TRACKS =
+            GameRuleBuilder.forBoolean(false)
+                    .category(GameRuleCategory.MISC)
+                    .buildAndRegister(Identifier.fromNamespaceAndPath(GeeDWinterPack.MOD_ID, "enable_snow_tracks"));
+
     public static void init() {
     }
 }

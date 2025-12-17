@@ -1,5 +1,6 @@
 package net.gthreed.geedwinterpack.CustomRendering;
 
+import net.gthreed.geedwinterpack.ModGameRules;
 import net.gthreed.geedwinterpack.block.ModBlocks;
 import net.gthreed.geedwinterpack.block.snowpile.SnowMode;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlockEntity;
@@ -28,6 +29,12 @@ public class SnowTracks {
 
 
     public static void onEntityTick(LivingEntity ent) {
+        Level level = ent.level();
+        if (level instanceof ServerLevel sl &&
+                !sl.getGameRules().get(ModGameRules.ENABLE_SNOW_TRACKS))
+            return;
+
+
         UUID id = ent.getUUID();
         double ex = ent.getX(), ez = ent.getZ();
         Vec2 last = LAST_STEP_POS.get(id);
@@ -39,8 +46,6 @@ public class SnowTracks {
 
         if (ent.isSpectator()) return;
         if (!ent.onGround()) return;
-
-        Level level = ent.level();
 
         boolean tile = (level instanceof ServerLevel sl) && SnowMode.useTileSnow(sl);
 

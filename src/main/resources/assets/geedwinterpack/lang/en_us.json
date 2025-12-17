@@ -1,4 +1,5 @@
 {
   "gamerule.geedwinterpack.use_tile_snow": "Use tile snow (SnowPile)",
-  "gamerule.geedwinterpack.max_snow_height": "Max snow height (layers)"
+  "gamerule.geedwinterpack.max_snow_height": "Max snow height (layers)",
+  "gamerule.geedwinterpack.enable_snow_tracks": "Enable entity snow tracks"
 }
