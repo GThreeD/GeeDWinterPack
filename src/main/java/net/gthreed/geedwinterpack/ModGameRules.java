@@ -11,9 +11,10 @@ public final class ModGameRules {
                     .category(GameRuleCategory.MISC)
                     .buildAndRegister(Identifier.fromNamespaceAndPath(GeeDWinterPack.MOD_ID, "use_tile_snow"));
 
-    private ModGameRules() {
-    }
-
+    public static final GameRule<Integer> MAX_SNOW_HEIGHT = GameRuleBuilder
+            .forInteger(3)
+            .category(GameRuleCategory.MISC)
+            .buildAndRegister(Identifier.fromNamespaceAndPath(GeeDWinterPack.MOD_ID, "max_snow_height"));
     public static void init() {
     }
 }

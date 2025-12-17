@@ -1,5 +1,6 @@
 package net.gthreed.geedwinterpack.CustomRendering;
 
+import net.gthreed.geedwinterpack.ModGameRules;
 import net.gthreed.geedwinterpack.block.ModBlocks;
 import net.gthreed.geedwinterpack.block.snowpile.SnowMode;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlock;
@@ -16,12 +17,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class SnowAccumulation {
-    private static final int MAX_LAYERS = 13;
-    private static final int NEAR_TOP_TILES_FOR_LAYER_UP = 12;
+    private static int MAX_LAYERS = ModGameRules.MAX_SNOW_HEIGHT.defaultValue();
+    private static int NEAR_TOP_TILES_FOR_LAYER_UP = ModGameRules.MAX_SNOW_HEIGHT.defaultValue() - 1;
     private static final double COVERAGE = 0.65; // wie viel Fläche überhaupt Schnee bekommt
     private static final int RND_PASSES = 2;      // smoothing passes
 
     public static void tick(ServerLevel level) {
+        int maxH = level.getGameRules().get(ModGameRules.MAX_SNOW_HEIGHT);
+
+        MAX_LAYERS = Mth.clamp(maxH, 1, 64);
+        NEAR_TOP_TILES_FOR_LAYER_UP = MAX_LAYERS - 1;
+
         if (level.isClientSide()) return;
 
         for (var player : level.players()) {
@@ -128,7 +134,7 @@ public class SnowAccumulation {
             }
 
             int layers = state.getValue(SnowLayerBlock.LAYERS);
-            if (random.nextFloat() < 0.15f && layers < 8) {
+            if (random.nextFloat() < 0.015f && layers < Mth.clamp(MAX_LAYERS, 1, 8)) {
                 level.setBlock(pos, state.setValue(SnowLayerBlock.LAYERS, layers + 1), 3);
             }
             return;
@@ -142,7 +148,7 @@ public class SnowAccumulation {
             }
 
             int layers = below.getValue(SnowLayerBlock.LAYERS);
-            if (random.nextFloat() < 0.15f && layers < 8) {
+            if (random.nextFloat() < 0.015f && layers < Mth.clamp(MAX_LAYERS, 1, 8)) {
                 level.setBlock(belowPos, below.setValue(SnowLayerBlock.LAYERS, layers + 1), 3);
             }
             return;
@@ -150,7 +156,7 @@ public class SnowAccumulation {
 
         // neu platzieren (wie bisher, nur eben Blocks.SNOW statt SnowPile)
         if (state.isAir() || state.canBeReplaced()) {
-            if (random.nextFloat() < 0.25f) {
+            if (random.nextFloat() < 0.025f) {
                 level.setBlock(pos, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, 1), 3);
             }
         }

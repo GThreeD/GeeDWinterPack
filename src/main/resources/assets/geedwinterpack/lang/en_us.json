@@ -1,3 +1,4 @@
 {
-  "gamerule.geedwinterpack.use_tile_snow": "Use tile snow (SnowPile)"
+  "gamerule.geedwinterpack.use_tile_snow": "Use tile snow (SnowPile)",
+  "gamerule.geedwinterpack.max_snow_height": "Max snow height (layers)"
 }
