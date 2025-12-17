@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -23,6 +24,7 @@ public class SnowAccumulation {
     private static final int RND_PASSES = 2;      // smoothing passes
 
     public static void tick(ServerLevel level) {
+        if (!level.dimension().equals(Level.OVERWORLD)) return;
         int maxH = level.getGameRules().get(ModGameRules.MAX_SNOW_HEIGHT);
 
         MAX_LAYERS = Mth.clamp(maxH, 1, 64);
