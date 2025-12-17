@@ -25,5 +25,6 @@ public class GeeDWinterPack implements ModInitializer {
         ModBlocks.init();
         ModBlockEntities.init();
         SnowChunkSeeding.init();
+        ModGameRules.init();
     }
 }

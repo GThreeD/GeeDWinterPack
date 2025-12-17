@@ -1,6 +1,7 @@
 package net.gthreed.geedwinterpack.CustomRendering;
 
 import net.gthreed.geedwinterpack.block.ModBlocks;
+import net.gthreed.geedwinterpack.block.snowpile.SnowMode;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlock;
 import net.gthreed.geedwinterpack.block.snowpile.SnowPileBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -9,6 +10,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -37,7 +39,7 @@ public class SnowAccumulation {
                 BlockPos placePos = pickSnowPlacePos(level, x, z);
                 if (placePos == null) continue;
 
-                maybePlaceSnowPile(level, placePos, placePos.below(), random);
+                maybePlaceSnow(level, placePos, placePos.below(), random);
             }
         }
     }
@@ -71,7 +73,17 @@ public class SnowAccumulation {
         return pos;
     }
 
-    private static void maybePlaceSnowPile(ServerLevel level, BlockPos pos, BlockPos belowPos, RandomSource random) {
+    private static void maybePlaceSnow(ServerLevel level, BlockPos pos, BlockPos belowPos, RandomSource random) {
+        boolean tile = SnowMode.useTileSnow(level);
+
+        if (tile) {
+            maybePlaceOrGrowTileSnow(level, pos, belowPos, random);
+        } else {
+            maybePlaceOrGrowVanillaSnow(level, pos, belowPos, random);
+        }
+    }
+
+    private static void maybePlaceOrGrowTileSnow(ServerLevel level, BlockPos pos, BlockPos belowPos, RandomSource random) {
         BlockState state = level.getBlockState(pos);
         BlockState below = level.getBlockState(belowPos);
 
@@ -102,6 +114,52 @@ public class SnowAccumulation {
                 }
             }
         }
+    }
+
+    private static void maybePlaceOrGrowVanillaSnow(ServerLevel level, BlockPos pos, BlockPos belowPos, RandomSource random) {
+        BlockState state = level.getBlockState(pos);
+        BlockState below = level.getBlockState(belowPos);
+
+        // schon Schnee da -> wachsen / schmelzen
+        if (state.is(Blocks.SNOW)) {
+            if (isHeatNearby(level, pos, 3, 2)) {
+                meltVanilla(level, pos, state);
+                return;
+            }
+
+            int layers = state.getValue(SnowLayerBlock.LAYERS);
+            if (random.nextFloat() < 0.15f && layers < 8) {
+                level.setBlock(pos, state.setValue(SnowLayerBlock.LAYERS, layers + 1), 3);
+            }
+            return;
+        }
+
+        // falls oben Air ist, aber unten Schnee liegt -> unten wachsen
+        if (state.isAir() && below.is(Blocks.SNOW)) {
+            if (isHeatNearby(level, belowPos, 3, 2)) {
+                meltVanilla(level, belowPos, below);
+                return;
+            }
+
+            int layers = below.getValue(SnowLayerBlock.LAYERS);
+            if (random.nextFloat() < 0.15f && layers < 8) {
+                level.setBlock(belowPos, below.setValue(SnowLayerBlock.LAYERS, layers + 1), 3);
+            }
+            return;
+        }
+
+        // neu platzieren (wie bisher, nur eben Blocks.SNOW statt SnowPile)
+        if (state.isAir() || state.canBeReplaced()) {
+            if (random.nextFloat() < 0.25f) {
+                level.setBlock(pos, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, 1), 3);
+            }
+        }
+    }
+
+    private static void meltVanilla(ServerLevel level, BlockPos pos, BlockState state) {
+        int layers = state.getValue(SnowLayerBlock.LAYERS);
+        if (layers > 1) level.setBlock(pos, state.setValue(SnowLayerBlock.LAYERS, layers - 1), 3);
+        else level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
     }
 
     private static boolean isHeatBlock(BlockState s) {
